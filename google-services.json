@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "41527784582",
+    "project_id": "th4-firebase-2bf54",
+    "storage_bucket": "th4-firebase-2bf54.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:41527784582:android:865b799a58441fa546cd07",
+        "android_client_info": {
+          "package_name": "com.hominhtam2305.adoptpet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "41527784582-ffh4kbpu8nvvjfp4koeud1641gl8qpel.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_7cFJxzKgRy1FjO9YdrX79owNMHTAjXg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "41527784582-ffh4kbpu8nvvjfp4koeud1641gl8qpel.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

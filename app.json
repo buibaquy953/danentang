@@ -16,10 +16,16 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.hominhtam2305.adoptpet",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "compileSdkVersion": 34
     },
     "web": {
       "bundler": "metro",
@@ -37,6 +43,17 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "bac85383-ef48-4a0a-8f1a-3f486c5bddc2"
+      }
+    },
+    "cli": {
+      "appVersionSource": "local"
     }
   }
 }

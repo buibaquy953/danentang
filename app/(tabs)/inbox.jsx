@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Image } from 'react-native';
 import { query, collection, getDocs, where } from 'firebase/firestore';
-import { useUser } from '@clerk/clerk-expo';
+import useFirebaseUser from '../../hooks/useFirebaseUser';
+import { useFocusEffect } from '@react-navigation/native';
 import Colors from './../../constants/Colors';
 import UserItem from '../../components/Inbox/UserItem';
 import { db } from './../../config/FirebaseConfig';
 
 export default function Inbox() {
-  const { user } = useUser();
+  const { user } = useFirebaseUser();
   const [loader, setLoader] = useState(false);
   const [userList, setUserList] = useState([]);
 
@@ -17,13 +18,21 @@ export default function Inbox() {
     }
   }, [user]);
 
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        GetUserList();
+      }
+    }, [user])
+  );
+
   // Get user list
   const GetUserList = async () => {
     setLoader(true);
     setUserList([]);
 
     try {
-      const q = query(collection(db, 'Chat'), where('userIds', 'array-contains', user?.primaryEmailAddress?.emailAddress));
+      const q = query(collection(db, 'Chat'), where('userIds', 'array-contains', user?.email));
       const querySnapshot = await getDocs(q);
       const userData = [];
 
@@ -43,13 +52,15 @@ export default function Inbox() {
     const list = [];
 
     userList.forEach((record) => {
-      const otherUser = record.users?.filter(u => u?.email !== user?.primaryEmailAddress?.emailAddress);
-      if (otherUser?.length) {  // Check if otherUser exists
-        const result = {
-          docId: record.id,
-          ...otherUser[0],
-        };
-        list.push(result);
+      if (Array.isArray(record.users)) {
+        const otherUser = record.users.filter(u => u?.email !== user?.email);
+        if (otherUser?.length) {
+          const result = {
+            docId: record.id,
+            ...otherUser[0],
+          };
+          list.push(result);
+        }
       }
     });
 
@@ -67,6 +78,11 @@ export default function Inbox() {
         style={styles.list}
         keyExtractor={(item) => item.docId} // Use a unique key
         renderItem={({ item }) => <UserItem userInfo={item} />}
+        ListEmptyComponent={() => (
+          <Text style={{textAlign:'center',marginTop:40,fontFamily:'outfit',fontSize:18,color:Colors.GRAY}}>
+            Chưa có tin nhắn
+          </Text>
+        )}
       />
     </View>
   );
@@ -81,6 +97,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: 'outfit-medium',
     fontSize: 30,
+    paddingTop:20,
   },
   list: {
     marginTop: 20,

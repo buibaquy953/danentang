@@ -1,18 +1,41 @@
 import { View, Text, TouchableOpacity, Alert, StyleSheet, Image, FlatList } from 'react-native';
-import React from 'react';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import React, { useEffect, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import Colors from './../../constants/Colors';// Nhập useNavigation
+import Colors from '../../constants/Colors';// Nhập useNavigation
 import { Ionicons } from '@expo/vector-icons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
+import useFirebaseUser from '../../hooks/useFirebaseUser';
+import { getAuth, signOut } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/FirebaseConfig';
+import * as SecureStore from 'expo-secure-store';
 
 export default function Profile() {
-  const { signOut } = useAuth(); // Sử dụng signOut từ useAuth
   const navigation = useNavigation(); // Khởi tạo navigation
-  const { user } = useUser();
+  const { user } = useFirebaseUser();
   const router = useRouter();
+  const [userData, setUserData] = useState(null);
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user?.uid) {
+        try {
+          const docRef = doc(db, 'Users', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          }
+        } catch (e) {
+          setUserData(null);
+        }
+      }
+    };
+    fetchUser();
+    // Listen for navigation focus to refresh user data
+    const unsubscribe = navigation.addListener('focus', fetchUser);
+    return unsubscribe;
+  }, [user, navigation]);
 
   const Menu=[
     {
@@ -40,11 +63,24 @@ export default function Profile() {
       path:'/(tabs)/inbox'
     },
     {
+      id:6,
+      name:'Edit Profile',
+      icon: 'person',
+      path:'/edit-profile'
+    },
+     {
+      id: 7,
+      name: 'Change Password',
+      icon: 'key',
+      path: '/change-password'
+    },
+    {
       id:4,
       name:'Logout',
       icon: 'exit',
       path:'logout'
-    }
+    },
+   
   ]
 
 
@@ -60,8 +96,10 @@ export default function Profile() {
         {
           text: "Đăng xuất",
           onPress: async () => {
-            await signOut(); // Thực hiện logout
-            navigation.navigate('login/index'); // Điều hướng về trang đăng nhập
+            await signOut(getAuth());
+            await SecureStore.deleteItemAsync('user_email');
+            await SecureStore.deleteItemAsync('user_password');
+            navigation.navigate('email-login');
           }
         }
       ]
@@ -101,7 +139,7 @@ export default function Profile() {
         alignItems: 'center',
         marginVertical: 25
       }}>
-        <Image source={{ uri: user?.imageUrl }}
+        <Image source={{ uri: userData?.imageUrl }}
           style={{
             width: 60,
             height: 60,
@@ -111,12 +149,12 @@ export default function Profile() {
           fontFamily: 'outfit-medium',
           fontSize: 20,
           marginTop:6
-        }}>{user?.fullName}</Text>
+        }}>{userData?.name}</Text>
         <Text style={{
           fontFamily: 'outfit',
           fontSize: 16,
           color: Colors.GRAY
-        }}>{user?.primaryEmailAddress?.emailAddress}</Text>
+        }}>{userData?.email}</Text>
       </View>
       <FlatList 
           data={Menu}

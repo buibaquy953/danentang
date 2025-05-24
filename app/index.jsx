@@ -1,24 +1,11 @@
-import { useUser } from "@clerk/clerk-expo";
-import { Link, Redirect } from "expo-router";
-import { Pressable, Text, View, ActivityIndicator } from "react-native";
+import React, { useEffect } from 'react';
+import useFirebaseUser from "../hooks/useFirebaseUser";
+import { Redirect } from "expo-router";
 
 export default function Index() {
-  const { user } = useUser();
+  const { user, loading } = useFirebaseUser();
 
-  // Có thể xác định rõ các trạng thái
-  const isLoading = user === undefined;
-  const isAuthenticated = !!user;
+  if (loading) return null;
 
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      {isLoading ? (
-        // Thay thế Loading bằng một ActivityIndicator
-        <ActivityIndicator size="large" color="#0000ff" />
-      ) : isAuthenticated ? (
-        <Redirect href={'/(tabs)/home'} />
-      ) : (
-        <Redirect href={'/login'} />
-      )}
-    </View>
-  );
+  return user ? <Redirect href={'/(tabs)/home'} /> : <Redirect href={'/email-login'} />;
 }

@@ -26,7 +26,7 @@ export default function FavPetCard({ pet }) {
                 right: 10,
                 top: 10
             }}>
-                <MarkFav pet={pet} color={'white'} />
+                <MarkFav pet={pet} color={'WHITE'} />
             </View>
             <Image source={{ uri: pet?.imageUrl }} style={{
                 width: 150,

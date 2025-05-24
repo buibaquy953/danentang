@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, StyleSheet } from 'react-native';
-import { db } from '../../config/FirebaseConfig';  // Sử dụng db từ FirebaseConfig
-import { collection, getDocs } from 'firebase/firestore'; // Import các phương thức Firestore
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { db } from '../../config/FirebaseConfig';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
-import PetListItem from '../../components/Home/PetListItem';  // Import PetListItem
+import FavPetCard from '../../components/Home/PetListItem';
 import Colors from './../../constants/Colors';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+import Feather from '@expo/vector-icons/Feather';
+import LottieView from 'lottie-react-native';
 
 const SearchScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [allPets, setAllPets] = useState([]);  // Lưu toàn bộ thú cưng từ Firestore
+  const [allPets, setAllPets] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [similarImage, setSimilarImage] = useState([]);
+  const [favPetList, setFavPetList] = useState([]);
+  const [notFound, setNotFound] = useState(false);
 
-  // Lấy toàn bộ danh sách thú cưng từ Firestore khi lần đầu tải trang
+  // Fetch toàn bộ thú cưng
   useEffect(() => {
     const fetchPets = async () => {
       setLoading(true);
@@ -22,40 +29,37 @@ const SearchScreen = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        setAllPets(petsData);  // Lưu toàn bộ thú cưng vào state
+        setAllPets(petsData);
       } catch (error) {
         console.error('Error fetching pets: ', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchPets();
   }, []);
 
-  // Hàm lọc kết quả tìm kiếm cục bộ
+  // Xử lý tìm kiếm
   const handleSearch = (queryText) => {
     setSearchQuery(queryText);
+    setNotFound(false);
 
     if (queryText.trim() === '') {
-      setResults([]);  // Xóa kết quả nếu không nhập gì
+      setFavPetList([]);
       return;
     }
 
     const filteredResults = allPets.filter((pet) =>
-      pet.name.toLowerCase().includes(queryText.toLowerCase()) // Lọc không phân biệt chữ hoa/thường
+      pet.name.toLowerCase().includes(queryText.toLowerCase())
     );
 
-    setResults(filteredResults);
+    setFavPetList(filteredResults);
+    setNotFound(filteredResults.length === 0);
   };
-
-  // Hiển thị từng kết quả tìm kiếm
-  const renderItem = ({ item }) => (
-    <PetListItem pet={item} /> // Sử dụng PetListItem để hiển thị kết quả tìm kiếm
-  );
 
   return (
     <View style={styles.container}>
-      {/* Thanh tìm kiếm */}
       <View style={styles.searchBar}>
         <Ionicons name="search" size={20} color="gray" style={styles.searchIcon} />
         <TextInput
@@ -64,33 +68,43 @@ const SearchScreen = () => {
           value={searchQuery}
           onChangeText={handleSearch}
         />
+
       </View>
 
-      {/* Danh sách kết quả */}
       {loading ? (
-        <Text>Loading...</Text>
+        <LottieView source={require('./../../assets/loading.json')} autoPlay loop />
       ) : (
-        <FlatList
-          data={results}
-          renderItem={renderItem}
-          numColumns={2}
-          keyExtractor={(item) => item.id}
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No results found</Text>
-            </View>
+        <View>
+          {notFound ? (
+            <Text style={styles.notFoundText}>Không tìm thấy </Text>
+          ) : (
+            <FlatList
+              data={favPetList}
+              numColumns={2}
+              renderItem={({ item }) => (
+                <View>
+                  <FavPetCard pet={item} />
+                </View>
+              )}
+              keyExtractor={(item) => item.id}
+              ListEmptyComponent={() => (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No results found</Text>
+                </View>
+              )}
+            />
           )}
-        />
+        </View>
       )}
     </View>
-  );
+  );  
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    marginTop:25,
+    marginTop: 25,
     backgroundColor: Colors.BACKGROUND,
   },
   searchBar: {
@@ -109,12 +123,18 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
   },
+  notFoundText: {
+    fontSize: 18,
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 20,
+  },
   emptyContainer: {
     alignItems: 'center',
     marginTop: 50,
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 16,
     color: 'gray',
   },
 });

@@ -3,13 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { db } from '../../config/FirebaseConfig';
 import { addDoc, collection, doc, getDoc, onSnapshot, Timestamp, query, orderBy } from 'firebase/firestore';
-import { useUser } from '@clerk/clerk-expo';
+import useFirebaseUser from '../../hooks/useFirebaseUser';
 import { GiftedChat } from 'react-native-gifted-chat';
 import Colors from './../../constants/Colors';
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
-  const { user } = useUser();
+  const { user } = useFirebaseUser();
   const navigation = useNavigation();
   const [messages, setMessages] = useState([]);
 
@@ -22,11 +22,11 @@ export default function ChatScreen() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const messageData = snapshot.docs.map((doc) => {
         const data = doc.data();
-        // Chuyển đổi Timestamp thành Date object
+        // Chuyển đổi Timestamp thành Date object, kiểm tra kỹ trước khi gọi toDate
         return {
           _id: doc.id,
           ...data,
-          createdAt: data.createdAt.toDate(), // Chuyển đổi Timestamp thành Date
+          createdAt: data.createdAt && data.createdAt.toDate ? data.createdAt.toDate() : new Date(),
         };
       });
       setMessages(messageData);
@@ -40,7 +40,7 @@ export default function ChatScreen() {
     const docSnap = await getDoc(docRef);
 
     const result = docSnap.data();
-    const otherUser = result?.users.filter(item => item.email != user?.primaryEmailAddress?.emailAddress);
+    const otherUser = result?.users.filter(item => item.email != user?.email);
 
     navigation.setOptions({
       headerTitle: otherUser[0]?.name,
@@ -56,9 +56,7 @@ export default function ChatScreen() {
   };
 
   const onSend = async (newMessage) => {
-    setMessages((previousMessages) => GiftedChat.append(previousMessages, newMessage));
-
-    // Sử dụng Timestamp từ Firestore và chuyển đổi trước khi lưu
+    // Không cần setMessages ở đây, chỉ lưu lên Firestore
     newMessage[0].createdAt = Timestamp.now();
     await addDoc(collection(db, 'Chat', params.id, 'Messages'), newMessage[0]);
   };
@@ -74,10 +72,11 @@ export default function ChatScreen() {
         onSend={messages => onSend(messages)}
         showUserAvatar={true}
         user={{
-          _id: user?.primaryEmailAddress?.emailAddress,
-          name: user?.fullName,
-          avatar: user?.imageUrl,
+          _id: user?.email,
+          name: user?.displayName,
+          avatar: user?.photoURL,
         }}
+        inverted={false}
       />
       {
         Platform.OS === 'ios' && <KeyboardAvoidingView behavior="padding" />

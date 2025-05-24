@@ -1,40 +1,77 @@
-import { View, Text, Image } from 'react-native'
-import React from 'react'
-import { useUser } from '@clerk/clerk-expo'
+import React, { useEffect, useState } from 'react';
+import { View, Text, Image } from 'react-native';
+import useFirebaseUser from '../../hooks/useFirebaseUser';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../config/FirebaseConfig';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Header() {
-  const {user} =useUser();
+  const { user } = useFirebaseUser();
+  const [userData, setUserData] = useState(null);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (user?.uid) {
+        try {
+          const docRef = doc(db, 'Users', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            setUserData(docSnap.data());
+          }
+        } catch (e) {
+          setUserData(null);
+        }
+      }
+    };
+    fetchUser();
+    // Listen for navigation focus to refresh user data
+    const unsubscribe = navigation.addListener('focus', fetchUser);
+    return unsubscribe;
+  }, [user, navigation]);
+
   return (
-    <View
-    style={{
-      display:'flex',
-      flexDirection:'row',
-      justifyContent:'space-between',
-      alignItems:'center',
-      paddingTop: 10,
-    }}>
+    <View style={styles.headerContainer}>
       <View>
-        <Text style={{
-          fontFamily:'outfit',
-          fontSize:18
-        }}>
-          Welcome,
-        </Text>
-        <Text
-        style={{
-          fontFamily:'outfit-medium',
-          fontSize:25
-        }}>
-          {user?.fullName}
-        </Text>
+        <Text style={styles.welcomeText}>Welcome,</Text>
+        <Text style={styles.userName}>{userData?.name || userData?.email || ''}</Text>
       </View>
-      <Image source={{uri:user?.imageUrl}}
-      style={{
-        width:40,
-        height:40,
-        borderRadius:99
-      }}
-      />
+      {userData?.imageUrl && (
+        <Image source={{ uri: userData.imageUrl }}
+          style={styles.avatar}
+        />
+      )}
     </View>
-  )
+  );
 }
+
+const styles = {
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 30,
+    paddingBottom: 10,
+    paddingHorizontal: 0,
+    backgroundColor: '#fff0',
+  },
+  welcomeText: {
+    fontFamily: 'outfit',
+    fontSize: 16,
+    color: '#7EC4CF',
+    marginBottom: 2,
+  },
+  userName: {
+    fontFamily: 'outfit-medium',
+    fontSize: 24,
+    color: '#2D2D2D',
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 99,
+    borderWidth: 2,
+    borderColor: '#FFD6EC',
+    backgroundColor: '#fff',
+  },
+};

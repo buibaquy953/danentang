@@ -1,70 +1,50 @@
 import { View, Text, Image, Dimensions, Pressable, StyleSheet } from 'react-native';
-import React, { useCallback, useState } from 'react';
-import Colors from './../../constants/Colors';
+import React, { useCallback, useState, useEffect } from 'react';
+import Colors from '../../constants/Colors';
 import * as WebBrowser from 'expo-web-browser';
-import { useOAuth } from '@clerk/clerk-expo';
-import * as Linking from 'expo-linking';
-import LottieView from 'lottie-react-native'; // Import Lottie
-import { useUser } from '@clerk/clerk-expo';
-import { useEffect } from 'react';
+import * as Google from 'expo-auth-session/providers/google';
+import * as AuthSession from 'expo-auth-session';
+import { signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
+import { auth } from '../../config/FirebaseConfig';
+import LottieView from 'lottie-react-native';
 import { useRouter } from 'expo-router';
-
-export const useWarmUpBrowser = () => {
-  React.useEffect(() => {
-    void WebBrowser.warmUpAsync();
-    return () => {
-      void WebBrowser.coolDownAsync();
-    };
-  }, []);
-};
+import useFirebaseUser from '../../hooks/useFirebaseUser';
 
 WebBrowser.maybeCompleteAuthSession();
 
-
-
 export default function LoginScreen() {
   const router = useRouter();
-  const { isLoaded, user } = useUser(); // Sử dụng useUser để kiểm tra người dùng
-  useWarmUpBrowser();
-  const { startOAuthFlow } = useOAuth({ strategy: 'oauth_google' });
-  const [loading, setLoading] = useState(false); // State to manage loading
+  const { user, loading } = useFirebaseUser();
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    expoClientId: 'YOUR_EXPO_CLIENT_ID', // Thay bằng clientId của bạn
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+    webClientId: 'YOUR_WEB_CLIENT_ID',
+  });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onPress = useCallback(async () => {
-    setLoading(true); // Start loading
-    try {
-      const { createdSessionId, signIn, signUp, setActive } = await startOAuthFlow({
-        redirectUrl: Linking.createURL('/', { scheme: 'myapp' }),
-      });
-
-      setLoading(false); // Stop loading
-
-      if (createdSessionId) {
-        // Đảm bảo sessionId tồn tại và hợp lệ
-        await setActive({ session: createdSessionId });
-        
-        // Khi đã gọi setActive, điều hướng có thể cần đợi isLoaded để hoàn tất
-        console.log("Đăng nhập thành công, đang đợi tải thông tin người dùng...");
-      } else if (signIn || signUp) {
-        console.log("Yêu cầu thêm bước đăng nhập hoặc đăng ký.");
-      } else {
-        console.log("Không có phiên được tạo hoặc signIn/signUp không được thực hiện.");
-      }
-    } catch (err) {
-      setLoading(false); // Stop loading on error
-      console.error('OAuth error', err);
-    }
-  }, []);
-
-  // useEffect để kiểm tra khi thông tin người dùng được tải xong
   useEffect(() => {
-    if (isLoaded && user) {
-      // Điều hướng đến home khi user có thông tin
-      console.log("Thông tin người dùng đã được tải, điều hướng đến trang chủ.");
-      router.push('(tabs)/home');
-    } else if (isLoaded && !user) {
-      console.log("Thông tin người dùng chưa có.");
+    if (response?.type === 'success') {
+      const { id_token } = response.params;
+      const credential = GoogleAuthProvider.credential(id_token);
+      setIsLoading(true);
+      signInWithCredential(auth, credential)
+        .then(() => {
+          setIsLoading(false);
+          router.push('(tabs)/home');
+        })
+        .catch((err) => {
+          setIsLoading(false);
+          alert('Đăng nhập thất bại!');
+        });
     }
-  }, [isLoaded, user]);
+  }, [response]);
+
+  useEffect(() => {
+    if (user) {
+      router.push('(tabs)/home');
+    }
+  }, [user]);
 
   var w = Dimensions.get('window').width;
   var h = Dimensions.get('window').height;
@@ -84,18 +64,25 @@ export default function LoginScreen() {
         </Text>
 
         <Pressable
-          onPress={onPress}
+          onPress={() => promptAsync()}
           style={styles.button}>
-          <Text style={styles.buttonText}>Get Started</Text>
+          <Text style={styles.buttonText}>Đăng nhập với Google</Text>
         </Pressable>
 
-        {loading && (
+        <Pressable
+          onPress={() => router.replace('/register')}
+          style={[styles.button, { backgroundColor: Colors.SECONDARY, marginTop: 20 }]}
+        >
+          <Text style={[styles.buttonText, { color: '#fff' }]}>Đăng nhập bằng Email</Text>
+        </Pressable>
+
+        {(isLoading || loading) && (
           <View style={styles.loadingOverlay}>
             <LottieView
               source={require('./../../assets/loading.json')} 
               autoPlay
               loop
-              style={styles.loadingAnimation} // Kích thước của animation
+              style={styles.loadingAnimation}
             />
           </View>
         )}
@@ -103,7 +90,6 @@ export default function LoginScreen() {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -150,8 +136,8 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Nền trắng nhẹ
-    zIndex: 1000, // Đảm bảo overlay nằm trên các thành phần khác
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    zIndex: 1000,
   },
   loadingAnimation: {
     width: 100,

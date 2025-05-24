@@ -2,13 +2,11 @@ import { View, Text, Pressable, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Shared from './../Shared/Shared'
-import { useUser } from '@clerk/clerk-expo';
+import useFirebaseUser from '../hooks/useFirebaseUser';
 import AntDesign from '@expo/vector-icons/AntDesign';
 
-
-
 export default function MarkFav({ pet }) {
-    const { user } = useUser();
+    const { user } = useFirebaseUser();
     const [favlist, setFavlist] = useState([]);
 
     useEffect(() => {
@@ -27,7 +25,6 @@ export default function MarkFav({ pet }) {
         GetFav();
     }
 
-
     const removeFromFav=async()=>{
         const favResult = favlist.filter(item=>item!=pet.id);
         await Shared.UpdateFav(user, favResult);
@@ -43,8 +40,6 @@ export default function MarkFav({ pet }) {
                     <FontAwesome name="heart-o" size={30} color="black" />
                 </TouchableOpacity>
             }
-
         </View>
-
     )
 }

@@ -7,56 +7,76 @@ export default function PetListItem({ pet }) {
   const router =useRouter();
   return (
     <TouchableOpacity 
-    onPress={()=>router.push(
-      {
-        pathname:'/pet-details',
-        params:pet
-      }
-    )}
-    style={{
-      padding: 10,
-      marginTop: 15,
-      marginHorizontal:5,
-      backgroundColor: Colors.WHITE,
-      borderRadius: 10,
-      // flex: 1, // Thêm flex: 1 để mỗi mục có thể chiếm không gian hợp lý trong FlatList
-    }}>
+      onPress={()=>router.push(
+        {
+          pathname:'/pet-details',
+          params:pet
+        }
+      )}
+      style={styles.card}
+    >
       <Image 
         source={{ uri: pet.imageUrl }}
-        style={{
-          width: 150, // Đảm bảo hình ảnh chiếm toàn bộ chiều rộng
-          height: 100,
-          objectFit:'cover',
-          borderRadius: 10,
-        }}
-        resizeMode="cover" // Sử dụng resizeMode để đảm bảo hình ảnh không bị méo
+        style={styles.image}
+        resizeMode="cover"
       />
-      <Text style={{
-        fontFamily: 'outfit-medium',
-        fontSize: 18,
-        marginTop: 10, // Thêm khoảng cách giữa hình ảnh và tên thú cưng
-      }}>{pet?.name}</Text>
-
-      <View style={{
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        // width: '100%', // Đảm bảo khung chứa thông tin chiếm toàn bộ chiều rộng
-        marginTop: 5, // Thêm khoảng cách giữa tên và thông tin
-      }}>
-        <Text style={{
-          fontFamily: 'outfit',
-          color: Colors.GRAY
-        }}>{pet?.breed}</Text>
-
-        <Text style={{
-          fontFamily: 'outfit',
-          color: Colors.PRIMARY,
-          paddingHorizontal: 7,
-          borderRadius: 99,
-          backgroundColor: Colors.LIGHT_PRIMARY,
-        }}>{pet?.age} Years</Text>
+      <Text style={styles.name}>{pet?.name}</Text>
+      <View style={styles.infoRow}>
+        <Text style={styles.breed}>{pet?.breed}</Text>
+        <Text style={styles.age}>{pet?.age} Years</Text>
       </View>
     </TouchableOpacity>
   );
 }
+
+const styles = {
+  card: {
+    padding: 12,
+    marginTop: 15,
+    marginHorizontal: 7,
+    backgroundColor: Colors.WHITE,
+    borderRadius: 18,
+    shadowColor: Colors.PRIMARY,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.10,
+    shadowRadius: 8,
+    elevation: 2,
+    alignItems: 'center',
+    minWidth: 150,
+    maxWidth: 180,
+    flex: 1,
+  },
+  image: {
+    width: 120,
+    height: 90,
+    borderRadius: 14,
+    marginBottom: 8,
+    backgroundColor: Colors.LIGHT_PRIMARY,
+  },
+  name: {
+    fontFamily: 'outfit-medium',
+    fontSize: 17,
+    marginTop: 2,
+    color: Colors.PRIMARY,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 6,
+  },
+  breed: {
+    fontFamily: 'outfit',
+    color: Colors.GRAY,
+    fontSize: 13,
+  },
+  age: {
+    fontFamily: 'outfit',
+    color: Colors.BLACK,
+    paddingHorizontal: 8,
+    borderRadius: 99,
+    backgroundColor: Colors.LIGHT_PRIMARY,
+    fontSize: 13,
+  },
+};

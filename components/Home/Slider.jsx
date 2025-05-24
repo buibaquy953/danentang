@@ -44,7 +44,7 @@ export default function Slider() {
     }, [currentIndex]);
 
     return (
-        <View style={{ marginTop: 5 }}>
+        <View style={styles.sliderContainer}>
             {loading ? (
                 <View style={styles.loadingContainer}>
                     <LottieView
@@ -67,6 +67,7 @@ export default function Slider() {
                             <Image source={{ uri: item?.imageUrl }} style={styles.sliderImage} />
                         </View>
                     )}
+                    contentContainerStyle={styles.flatListContent}
                 />
             )}
         </View>
@@ -74,6 +75,17 @@ export default function Slider() {
 }
 
 const styles = StyleSheet.create({
+    sliderContainer: {
+        marginTop: 0,
+        backgroundColor: Colors.WHITE,
+        borderRadius: 18,
+        padding: 8,
+        shadowColor: Colors.PRIMARY,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
+    },
     loadingContainer: {
         justifyContent: 'center',
         alignItems: 'center',
@@ -88,9 +100,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     sliderImage: {
-        width: Dimensions.get('screen').width * 0.9,
-        height: Dimensions.get('screen').height * 0.2,
+        width: Dimensions.get('screen').width * 0.82,
+        height: Dimensions.get('screen').height * 0.19,
         borderRadius: 15,
         marginRight: 10,
+    },
+    flatListContent: {
+        alignItems: 'center',
     },
 });

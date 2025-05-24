@@ -6,13 +6,14 @@ import PetInfo from '../../components/PetDetails/PetInfo';
 import PetSubInfo from '../../components/PetDetails/PetSubInfo';
 import AboutPet from '../../components/PetDetails/AboutPet';
 import OwnerInfo from '../../components/PetDetails/OwnerInfo';
-import { useUser } from '@clerk/clerk-expo';
 import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { db } from '../../config/FirebaseConfig';
+import useFirebaseUser from '../../hooks/useFirebaseUser';
+
 export default function PetDetails() {
     const pet = useLocalSearchParams();
     const navigation =useNavigation();
-    const {user} = useUser();
+    const {user} = useFirebaseUser();
     const router =useRouter();
 
     useEffect(()=>{
@@ -24,43 +25,52 @@ export default function PetDetails() {
 
 
     const InitiateChat=async()=>{
-            const docId1 =user?.primaryEmailAddress?.emailAddress+'_'+pet?.email;
-            const docId2 =pet?.email+'_'+user?.primaryEmailAddress?.emailAddress;
+        if (!user?.email || !pet?.email) {
+            alert('Không thể liên hệ: thiếu thông tin người dùng hoặc thú cưng!');
+            return;
+        }
+        // Nếu là thú cưng của mình thì không cho chuyển trang
+        if (user.email === pet.email) {
+            alert('Đây là thú cưng của bạn!');
+            return;
+        }
+        const docId1 =user.email+'_'+pet.email;
+        const docId2 =pet.email+'_'+user.email;
 
-            const q=query(collection(db,'Chat'),where('id','in',[docId1,docId2]));
+        const q=query(collection(db,'Chat'),where('id','in',[docId1,docId2]));
 
-            const querySnapshot =await getDocs(q);
-            querySnapshot.forEach((doc)=>{
-                // console.log(doc.data());
-                router.push({
-                    pathname:'/chat',
-                    params:{id:doc.id}
-                })
+        const querySnapshot =await getDocs(q);
+        querySnapshot.forEach((doc)=>{
+            // console.log(doc.data());
+            router.push({
+                pathname:'/chat',
+                params:{id:doc.id}
             })
+        })
 
-            if(querySnapshot.docs?.length==0)
-            {
-                await setDoc(doc(db,'Chat',docId1),{
-                    id:docId1,
-                    users:[
-                        {
-                            email:user?.primaryEmailAddress?.emailAddress,
-                            imageUrl:user?.imageUrl,
-                            name:user?.fullName
-                        },
-                        {
-                            email:pet?.email,
-                            imageUrl:pet?.userImage,
-                            name:pet?.userName
-                        }
-                    ],
-                    userIds:[user?.primaryEmailAddress?.emailAddress,pet?.email]
-                });
-                 router.push({
-                    pathname:'/chat',
-                    params:{id:docId1}
-                })
-            }
+        if(querySnapshot.docs?.length==0)
+        {
+            await setDoc(doc(db,'Chat',docId1),{
+                id:docId1,
+                users:[
+                    {
+                        email:user.email,
+                        imageUrl:user.photoURL,
+                        name:user.displayName
+                    },
+                    {
+                        email:pet.email,
+                        imageUrl:pet.userImage,
+                        name:pet.userName
+                    }
+                ],
+                userIds:[user.email,pet.email]
+            });
+            router.push({
+                pathname:'/chat',
+                params:{id:docId1}
+            })
+        }
     }
   return (
     <View style={{backgroundColor:Colors.BACKGROUND}}>
@@ -89,7 +99,7 @@ export default function PetDetails() {
                     fontFamily:'outfit-medium',
                     textAlign:'center',
                     fontSize:20
-                }}>Adopt Me</Text>
+                }}>C O N T A C T</Text>
             </TouchableOpacity>
         </View>
     </View>

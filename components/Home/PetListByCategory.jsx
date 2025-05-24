@@ -94,9 +94,9 @@ export default function PetListByCategory({ scrollY, setShowButton, resetScrollP
               [{ nativeEvent: { contentOffset: { y: scrollY } } }],
               { useNativeDriver: false }
             )}
-            onScrollEndDrag={handleScroll} // Kiểm soát hiển thị nút dựa vào vị trí cuộn
-            onMomentumScrollEnd={handleScroll} // Kiểm tra vị trí cuộn khi ngừng di chuyển
-            onEndReachedThreshold={0.5} // Ngưỡng để kích hoạt
+            onScrollEndDrag={handleScroll} 
+            onMomentumScrollEnd={handleScroll} 
+            onEndReachedThreshold={0.5} 
           />
         </Animated.View>
       )}
@@ -110,7 +110,8 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   flatListContent: {
-    paddingBottom: 10, 
+    paddingBottom: 16, 
+    paddingTop: 4,
   },
   flatList: {
     flex: 1,
